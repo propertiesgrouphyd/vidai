@@ -26,6 +26,58 @@ const DropdownManager = Object.freeze({
         populateSelect(select, DataManager.getPurposes(), "Select Purpose");
     },
 
+
+
+    clearCategories(select) {
+
+        populateSelect(
+            select,
+            [],
+            "Select Category"
+        );
+
+    },
+
+
+    clearTopics(select) {
+
+        populateSelect(
+            select,
+            [],
+            "Select Topic"
+        );
+
+    },
+
+
+    populateCategoriesByPurpose(select, purpose) {
+
+        const categories =
+            DataManager.getCategoriesByPurpose(purpose);
+
+        populateSelect(
+            select,
+            categories,
+            "Select Category"
+        );
+
+    },
+
+
+    populateTopicsByCategory(select, category) {
+
+        const topics =
+            DataManager.getTopicsByCategory(category);
+
+        populateSelect(
+            select,
+            topics,
+            "Select Topic"
+        );
+
+    },
+
+
     populateCategories(select) {
         populateSelect(select, DataManager.getCategories(), "Select Category");
     },

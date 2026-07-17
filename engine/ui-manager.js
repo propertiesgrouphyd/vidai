@@ -25,9 +25,13 @@ function initializeDropdowns() {
 
     DropdownManager.populatePurposes(UI.purpose);
 
-    DropdownManager.populateCategories(UI.category);
+    DropdownManager.clearCategories(
+        UI.category
+    );
 
-    DropdownManager.populateTopics(UI.topic);
+    DropdownManager.clearTopics(
+        UI.topic
+    );
 
     DropdownManager.populateGoals(UI.goal);
 
@@ -46,6 +50,53 @@ function initializeDropdowns() {
     DropdownManager.populateEmojis(UI.emoji);
 
     DropdownManager.populateCTAs(UI.cta);
+
+    initializeCascadeDropdowns();
+
+}
+
+
+
+
+function initializeCascadeDropdowns() {
+
+    if (UI.purpose) {
+
+        UI.purpose.addEventListener(
+            "change",
+            () => {
+
+                DropdownManager.populateCategoriesByPurpose(
+                    UI.category,
+                    UI.purpose.value
+                );
+
+                DropdownManager.populateTopicsByCategory(
+                    UI.topic,
+                    ""
+                );
+
+            }
+        );
+
+    }
+
+
+    if (UI.category) {
+
+        UI.category.addEventListener(
+            "change",
+            () => {
+
+                DropdownManager.populateTopicsByCategory(
+                    UI.topic,
+                    UI.category.value
+                );
+
+            }
+        );
+
+    }
 
 }
 

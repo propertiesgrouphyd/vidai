@@ -50,6 +50,29 @@ const DataManager = Object.freeze({
         return data.ctas;
     },
 
+
+    getCategoriesByPurpose(purpose) {
+
+        return data.categories.filter(
+
+            item => item.purpose === purpose
+
+        );
+
+    },
+
+
+    getTopicsByCategory(category) {
+
+        return data.topics.filter(
+
+            item => item.category === category
+
+        );
+
+    },
+
+
     getCategory(id) {
         return data.categories.find(item => item.id === id) || null;
     },
