@@ -1,0 +1,121 @@
+"use strict";
+
+/* ==========================================================================
+   VIDHWAAN AI Writer
+   Dropdown Manager
+   ========================================================================== */
+
+const VWDropdown = (() => {
+
+    const MAP = Object.freeze({
+
+        "vw-purpose": "PURPOSES",
+
+        "vw-category": "CATEGORIES",
+
+        "vw-style": "STYLES",
+
+        "vw-audience": "AUDIENCES",
+
+        "vw-length": "LENGTHS",
+
+        "vw-platform": "PLATFORMS",
+
+        "vw-language": "LANGUAGES",
+
+        "vw-creativity": "CREATIVITY",
+
+        "vw-emoji": "EMOJIS",
+
+        "vw-cta": "CTA"
+
+    });
+
+
+    function fill(select, values = []) {
+
+        if (
+            !select ||
+            !Array.isArray(values)
+        ) {
+            return;
+        }
+
+
+        const placeholder =
+            select.querySelector(
+                "option[value='']"
+            );
+
+
+        select.innerHTML = "";
+
+
+        if (placeholder) {
+
+            select.appendChild(
+                placeholder
+            );
+
+        }
+
+
+        values.forEach(value => {
+
+            const option =
+                document.createElement(
+                    "option"
+                );
+
+
+            option.value = value;
+
+            option.textContent = value;
+
+
+            select.appendChild(option);
+
+        });
+
+    }
+
+
+    function initialize() {
+
+        if (
+            typeof VW_LIBRARY === "undefined"
+        ) {
+            return;
+        }
+
+
+        Object.entries(MAP)
+            .forEach(([id, key]) => {
+
+                const select =
+                    document.getElementById(id);
+
+
+                if (!select) {
+                    return;
+                }
+
+
+                fill(
+                    select,
+                    VW_LIBRARY[key]
+                );
+
+            });
+
+    }
+
+
+    return Object.freeze({
+
+        initialize
+
+    });
+
+
+})();

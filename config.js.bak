@@ -1,0 +1,61 @@
+"use strict";
+
+/* ========================================================================
+   VIDHWAAN AI Writer
+   Configuration
+   Version : 1.0.0
+   ======================================================================== */
+
+const VW_CONFIG = Object.freeze({
+
+    APP_NAME: "VIDHWAAN AI Writer",
+
+    APP_VERSION: "1.0.0",
+
+    SUBSCRIPTION_PRICE: 30,
+
+    STORAGE_KEYS: Object.freeze({
+
+        API_KEY: "vw_api_key",
+
+        UNIQUE_ID: "vw_unique_id",
+
+        SETTINGS: "vw_settings"
+
+    }),
+
+    SUBSCRIPTION: Object.freeze({
+
+        CACHE_MINUTES: 15
+
+    }),
+
+    API: Object.freeze({
+
+        BASE_URL: "",
+
+        CHAT_ENDPOINT: "",
+
+        MODEL: ""
+
+    }),
+
+    WORKER: Object.freeze({
+
+        BASE_URL: "",
+
+        CREATE_ORDER: "/create-order",
+
+        VERIFY_PAYMENT: "/verify-payment",
+
+        CHECK_SUBSCRIPTION: "/subscription"
+
+    }),
+
+    R2: Object.freeze({
+
+        BASE_URL: ""
+
+    })
+
+});

@@ -1,0 +1,86 @@
+"use strict";
+
+/* ========================================================================
+   VIDHWAAN AI Writer
+   AI Client
+   ======================================================================== */
+
+const VWAI = (() => {
+
+    async function generate(prompt) {
+
+        const apiKey = VWStorage.get(
+            VW_CONFIG.STORAGE_KEYS.API_KEY,
+            ""
+        );
+
+        if (!apiKey) {
+
+            throw new Error("API key not found.");
+
+        }
+
+        const response = await fetch(
+
+            VW_CONFIG.API.BASE_URL +
+            VW_CONFIG.API.CHAT_ENDPOINT,
+
+            {
+
+                method: "POST",
+
+                headers: {
+
+                    "Content-Type": "application/json",
+
+                    "Authorization": `Bearer ${apiKey}`
+
+                },
+
+                body: JSON.stringify({
+
+                    model: VW_CONFIG.API.MODEL,
+
+                    messages: [
+
+                        {
+
+                            role: "user",
+
+                            content: prompt
+
+                        }
+
+                    ]
+
+                })
+
+            }
+
+        );
+
+        if (!response.ok) {
+
+            throw new Error("AI request failed.");
+
+        }
+
+        const data = await response.json();
+
+        return (
+
+            data?.choices?.[0]?.message?.content ||
+
+            ""
+
+        );
+
+    }
+
+    return Object.freeze({
+
+        generate
+
+    });
+
+})();

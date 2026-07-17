@@ -1,0 +1,43 @@
+"use strict";
+
+/* ========================================================================
+   VIDHWAAN AI Writer
+   Prompt Builder
+   ======================================================================== */
+
+const VWPrompt = (() => {
+
+    function build(data = {}) {
+
+        const lines = [
+
+            `Purpose: ${data.purpose || ""}`,
+            `Category: ${data.category || ""}`,
+            `Writing Style: ${data.style || ""}`,
+            `Target Audience: ${data.audience || ""}`,
+            `Content Length: ${data.length || ""}`,
+            `Platform: ${data.platform || ""}`,
+            `Language: ${data.language || ""}`,
+            `Creativity: ${data.creativity || ""}`,
+            `Emoji Usage: ${data.emoji || ""}`,
+            `Call To Action: ${data.cta || ""}`,
+            "",
+            "Topic:",
+            data.topic || "",
+            "",
+            "Instructions:",
+            data.instructions || ""
+
+        ];
+
+        return lines.join("\n").trim();
+
+    }
+
+    return Object.freeze({
+
+        build
+
+    });
+
+})();

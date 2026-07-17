@@ -1,0 +1,100 @@
+"use strict";
+
+/* ========================================================================
+   VIDHWAAN AI Writer
+   Subscription Manager
+   ======================================================================== */
+
+const VWSubscription = (() => {
+
+    let status = Object.freeze({
+        active: false,
+        uniqueId: "",
+        expiresOn: "",
+        checkedAt: 0
+    });
+
+    function getStatus() {
+
+        return status;
+
+    }
+
+    function setStatus(data = {}) {
+
+        status = Object.freeze({
+
+            active: Boolean(data.active),
+
+            uniqueId: data.uniqueId || "",
+
+            expiresOn: data.expiresOn || "",
+
+            checkedAt: Date.now()
+
+        });
+
+        return status;
+
+    }
+
+    function reset() {
+
+        return setStatus({});
+
+    }
+
+    function isActive() {
+
+        return status.active;
+
+    }
+
+    async function refresh() {
+
+        const uniqueId = VWStorage.get(
+            VW_CONFIG.STORAGE_KEYS.UNIQUE_ID,
+            ""
+        );
+
+        if (!uniqueId) {
+
+            reset();
+
+            return status;
+
+        }
+
+        try {
+
+            const result = await VWPayment.checkSubscription(uniqueId);
+
+            setStatus(result);
+
+        } catch (error) {
+
+            console.error(error);
+
+            reset();
+
+        }
+
+        return status;
+
+    }
+
+    return Object.freeze({
+
+        getStatus,
+
+        setStatus,
+
+        reset,
+
+        isActive,
+
+        refresh
+
+    });
+
+})();
