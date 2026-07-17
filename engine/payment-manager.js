@@ -5,15 +5,16 @@ function openPaymentModal() {
             "vw-payment-modal"
         );
 
-    if (modal) {
+    if (!modal) return;
 
-        modal.hidden = false;
-        modal.setAttribute(
-            "aria-hidden",
-            "false"
-        );
+    modal.hidden = false;
 
-    }
+    modal.setAttribute(
+        "aria-hidden",
+        "false"
+    );
+
+    document.body.style.overflow = "hidden";
 
 }
 
@@ -25,15 +26,16 @@ function closePaymentModal() {
             "vw-payment-modal"
         );
 
-    if (modal) {
+    if (!modal) return;
 
-        modal.hidden = true;
-        modal.setAttribute(
-            "aria-hidden",
-            "true"
-        );
+    modal.hidden = true;
 
-    }
+    modal.setAttribute(
+        "aria-hidden",
+        "true"
+    );
+
+    document.body.style.overflow = "";
 
 }
 
@@ -71,6 +73,31 @@ function initializePaymentModal() {
                 console.log(
                     "Payment flow started"
                 );
+
+            }
+        );
+
+
+    }
+
+    const modal =
+        document.getElementById(
+            "vw-payment-modal"
+        );
+
+    if (modal) {
+
+        modal.addEventListener(
+            "click",
+            e => {
+
+                if (
+                    e.target === modal
+                ) {
+
+                    closePaymentModal();
+
+                }
 
             }
         );

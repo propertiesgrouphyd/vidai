@@ -24,11 +24,15 @@ function openApiModal() {
             "vw-api-modal"
         );
 
-    if (modal) {
+    if (!modal) return;
 
-        modal.hidden = false;
+    modal.hidden = false;
+    modal.setAttribute(
+        "aria-hidden",
+        "false"
+    );
 
-    }
+    document.body.style.overflow = "hidden";
 
 }
 
@@ -40,11 +44,15 @@ function closeApiModal() {
             "vw-api-modal"
         );
 
-    if (modal) {
+    if (!modal) return;
 
-        modal.hidden = true;
+    modal.hidden = true;
+    modal.setAttribute(
+        "aria-hidden",
+        "true"
+    );
 
-    }
+    document.body.style.overflow = "";
 
 }
 
@@ -92,6 +100,31 @@ function initializeApiModal() {
                 );
 
                 closeApiModal();
+
+            }
+        );
+
+
+    }
+
+    const modal =
+        document.getElementById(
+            "vw-api-modal"
+        );
+
+    if (modal) {
+
+        modal.addEventListener(
+            "click",
+            e => {
+
+                if (
+                    e.target === modal
+                ) {
+
+                    closeApiModal();
+
+                }
 
             }
         );
