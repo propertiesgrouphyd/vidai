@@ -621,3 +621,5 @@ const VW_CATEGORIES = Object.freeze([
 ]);
 
 Object.freeze(VW_CATEGORIES);
+
+export default VW_CATEGORIES;

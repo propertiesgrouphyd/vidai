@@ -115,3 +115,5 @@ const VW_CONTENT_STYLES = Object.freeze([
 ]);
 
 Object.freeze(VW_CONTENT_STYLES);
+
+export default VW_CONTENT_STYLES;

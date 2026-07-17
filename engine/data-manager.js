@@ -1,4 +1,4 @@
-import data from "../data/index.js";
+import * as data from "../data/index.js";
 
 const DataManager = Object.freeze({
 

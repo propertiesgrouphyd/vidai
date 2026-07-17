@@ -1899,3 +1899,5 @@ const VW_TOPICS = Object.freeze([
 ]);
 
 Object.freeze(VW_TOPICS);
+
+export default VW_TOPICS;

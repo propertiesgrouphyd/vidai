@@ -69,3 +69,5 @@ const VW_PURPOSES = Object.freeze([
 ]);
 
 Object.freeze(VW_PURPOSES);
+
+export default VW_PURPOSES;
