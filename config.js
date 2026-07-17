@@ -5,7 +5,7 @@
    Global Configuration
    ========================================================================== */
 
-const VW_CONFIG = Object.freeze({
+window.VW_CONFIG = Object.freeze({
 
     APP_NAME: "VIDHWAAN AI Writer",
     APP_VERSION: "1.0.0",
