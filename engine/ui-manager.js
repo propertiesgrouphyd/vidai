@@ -5,6 +5,9 @@ const UI = {
     purpose: document.getElementById("vw-purpose"),
     category: document.getElementById("vw-category"),
     topic: document.getElementById("vw-topic"),
+
+    customTopic:
+        document.getElementById("vw-custom-topic"),
     goal: document.getElementById("vw-goal"),
 
     contentStyle: document.getElementById("vw-style"),
@@ -82,6 +85,43 @@ function initializeCascadeDropdowns() {
     }
 
 
+
+    if (UI.topic) {
+
+        UI.topic.addEventListener(
+            "change",
+            () => {
+
+                const wrapper =
+                    document.getElementById(
+                        "vw-custom-topic-wrapper"
+                    );
+
+                if (!wrapper) return;
+
+
+                if (UI.topic.value === "custom-topic") {
+
+                    wrapper.hidden = false;
+
+                } else {
+
+                    wrapper.hidden = true;
+
+                    if (UI.customTopic) {
+
+                        UI.customTopic.value = "";
+
+                    }
+
+                }
+
+            }
+        );
+
+    }
+
+
     if (UI.category) {
 
         UI.category.addEventListener(
@@ -109,7 +149,13 @@ function getValues() {
 
         category: UI.category?.value || "",
 
-        topic: UI.topic?.value || "",
+        topic:
+            UI.topic?.value === "custom-topic"
+                ? UI.customTopic?.value || ""
+                : UI.topic?.value || "",
+
+        customTopic:
+            UI.customTopic?.value || "",
 
         goal: UI.goal?.value || "",
 

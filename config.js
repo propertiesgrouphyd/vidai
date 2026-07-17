@@ -31,13 +31,13 @@ window.VW_CONFIG = Object.freeze({
     }),
 
     WORKER: Object.freeze({
-        BASE_URL: "https://YOUR-WORKER.workers.dev",
+        BASE_URL: "https://bold-fire-78f8.propertiesgrouphyd.workers.dev",
         CREATE_ORDER: "/create-order",
         VERIFY_PAYMENT: "/verify-payment"
     }),
 
     R2: Object.freeze({
-        BASE_URL: "https://YOUR-R2-PUBLIC-URL/subscriptions"
+        BASE_URL: "https://subscriptions.propertiesgrouphyd.online/subscriptions"
     }),
 
     SUBSCRIPTION: Object.freeze({

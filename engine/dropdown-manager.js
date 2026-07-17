@@ -83,7 +83,21 @@ const DropdownManager = Object.freeze({
     },
 
     populateTopics(select) {
-        populateSelect(select, DataManager.getTopics(), "Select Topic");
+
+        const topics = [
+            ...DataManager.getTopics(),
+            {
+                id: "custom-topic",
+                label: "Custom Topic"
+            }
+        ];
+
+        populateSelect(
+            select,
+            topics,
+            "Select Topic"
+        );
+
     },
 
     populateGoals(select) {

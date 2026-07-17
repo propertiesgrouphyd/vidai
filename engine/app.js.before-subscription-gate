@@ -1,19 +1,5 @@
 "use strict";
 
-import { UI, initializeDropdowns, getValues } from "./ui-manager.js";
-import { validate } from "./validator.js";
-import { save, load } from "./storage.js";
-import { buildContext } from "./context-builder.js";
-import { buildPrompt } from "./prompt-builder.js";
-import { generateContent } from "./ai-client.js";
-import * as Output from "./output-renderer.js";
-import { ensureApiKey, initializeApiModal } from "./api-manager.js";
-import { ensureUniqueId } from "./identity-manager.js";
-import { checkSubscription } from "./subscription-manager.js";
-import { openPaymentModal, initializePaymentModal } from "./payment-manager.js";
-
-
-
 
 
 const AI_CONFIG = {
@@ -38,13 +24,13 @@ const AI_CONFIG = {
 
 
 
-
-
-
-
-
-
-
+import { UI, initializeDropdowns, getValues } from "./ui-manager.js";
+import { validate } from "./validator.js";
+import { save, load } from "./storage.js";
+import { buildContext } from "./context-builder.js";
+import { buildPrompt } from "./prompt-builder.js";
+import { generateContent } from "./ai-client.js";
+import * as Output from "./output-renderer.js";
 
 
 
@@ -104,41 +90,7 @@ async function onGenerate() {
 
     try {
 
-        if (!ensureApiKey()) {
-
-            return;
-
-        }
-
-
-        const uniqueId =
-            ensureUniqueId();
-
-
-        const subscription =
-            await checkSubscription(uniqueId);
-
-
-        if (!subscription.active) {
-
-            openPaymentModal();
-
-            return;
-
-        }
-
-
-        AI_CONFIG.apiKey =
-            localStorage.getItem(
-                window.VW_CONFIG.STORAGE_KEYS.API_KEY
-            );
-
-
-        const content =
-            await generateContent(
-                prompt,
-                AI_CONFIG
-            );
+        const content = await generateContent(prompt, AI_CONFIG);
 
         Output.render(content);
 
