@@ -1,55 +1,156 @@
-name: Generate LinkedIn Topics
+name: Generate VIDHWAAN AI Topics
+
 
 on:
+
   workflow_dispatch:
 
-  push:
-    paths:
-      - "purposes.js"
-      - "categories.js"
-      - "scripts/generate-topics.js"
+
+
+
+permissions:
+
+  contents: write
+
 
 
 jobs:
 
   generate-topics:
 
+
+    name: Generate Topics Using Groq
+
+
     runs-on: ubuntu-latest
+
+
+    timeout-minutes: 360
+
 
 
     steps:
 
+
+
       - name: Checkout Repository
+
         uses: actions/checkout@v4
+
+        with:
+
+          fetch-depth: 0
+
+
+
 
 
       - name: Setup Node.js
+
         uses: actions/setup-node@v4
+
         with:
+
           node-version: 22
 
+          cache: npm
 
-      - name: Generate Topics Using Groq AI
-        env:
-          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+
+
+
+
+      - name: Install Dependencies
+
         run: |
+
+          npm ci
+
+
+
+
+
+      - name: Generate Topics
+
+        env:
+
+          GROQ_API_KEY:
+            ${{ secrets.GROQ_API_KEY }}
+
+        run: |
+
           node scripts/generate-topics.js
 
 
-      - name: Validate Generated File
+
+
+
+      - name: Validate Generated Topics
+
         run: |
+
           node scripts/generate-topics.js --validate
 
 
-      - name: Commit Generated Topics
+
+
+
+      - name: Show Generation Status
+
         run: |
 
-          git config user.name "github-actions"
+          echo "Generated topic files:"
 
-          git config user.email "actions@github.com"
+          ls -lh generated/
+
+          echo ""
+
+          echo "Topic count:"
+
+          node -e "
+
+          const fs=require('fs');
+
+          const text=fs.readFileSync(
+          'generated/topics-progress.json',
+          'utf8'
+          );
+
+          console.log(
+          JSON.parse(text).length
+          );
+
+          "
+
+
+
+
+
+      - name: Commit Generated Topics
+
+
+        run: |
+
+
+          git config user.name "github-actions[bot]"
+
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+
 
           git add generated/topics.js
 
-          git commit -m "Auto generate LinkedIn topics" || echo "No changes"
+          git add generated/topics-progress.json
+
+
+
+          git diff --cached --quiet || git commit -m "Auto update AI topics"
+
+
+
+      - name: Push Changes
+
+
+        run: |
+
 
           git push
