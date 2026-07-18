@@ -219,8 +219,21 @@ function initializePaymentModal() {
 
                                 closePaymentModal();
 
+                                document.dispatchEvent(
 
-                                window.location.reload();
+                                    new CustomEvent(
+
+                                        "vw-subscription-activated",
+
+                                        {
+
+                                            detail:result
+
+                                        }
+
+                                    )
+
+                                );
 
                             }
 

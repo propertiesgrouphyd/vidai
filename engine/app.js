@@ -173,6 +173,19 @@ async function onRegenerate() {
 }
 
 
+document.addEventListener(
+
+    "vw-subscription-activated",
+
+    () => {
+
+        onGenerate();
+
+    }
+
+);
+
+
 document.addEventListener("DOMContentLoaded", () => {
 
     initializeDropdowns();

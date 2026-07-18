@@ -1,4 +1,10 @@
+import { getUniqueId } from "./identity-manager.js";
+
 async function checkSubscription(uniqueId) {
+
+    uniqueId =
+        uniqueId ||
+        getUniqueId();
 
     if (!uniqueId) {
 
