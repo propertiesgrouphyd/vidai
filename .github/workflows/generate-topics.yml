@@ -7,8 +7,6 @@ on:
 
 
 
-
-
 permissions:
 
   contents: write
@@ -21,7 +19,7 @@ jobs:
   generate-topics:
 
 
-    name: Generate Topics With Groq
+    name: AI Topic Generator
 
 
     runs-on: ubuntu-latest
@@ -32,6 +30,7 @@ jobs:
 
 
     steps:
+
 
 
       - name: Checkout Repository
@@ -46,7 +45,7 @@ jobs:
 
 
 
-      - name: Setup Node.js 22
+      - name: Setup Node.js
 
         uses: actions/setup-node@v4
 
@@ -58,7 +57,7 @@ jobs:
 
 
 
-      - name: Verify Node
+      - name: Check Environment
 
         run: |
 
@@ -68,7 +67,7 @@ jobs:
 
 
 
-      - name: Generate Topics
+      - name: Generate Topics With Groq
 
         env:
 
@@ -82,7 +81,7 @@ jobs:
 
 
 
-      - name: Validate Generated Topics
+      - name: Validate Topics
 
         run: |
 
@@ -92,7 +91,7 @@ jobs:
 
 
 
-      - name: Check Generated Files
+      - name: Show Result
 
         run: |
 
@@ -101,9 +100,27 @@ jobs:
           ls -lh generated/
 
 
+          echo ""
 
 
-      - name: Commit Changes
+          echo "Topic count:"
+
+
+          node -e "
+
+          const fs=require('fs');
+
+          const data=require('./generated/topics-progress.json');
+
+          console.log(data.length);
+
+          "
+
+
+
+
+
+      - name: Commit Generated Topics
 
 
         run: |
