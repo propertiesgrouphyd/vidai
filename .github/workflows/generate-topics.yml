@@ -29,11 +29,6 @@ jobs:
           node-version: 22
 
 
-      - name: Install Dependencies
-        run: |
-          npm install
-
-
       - name: Generate Topics Using Groq AI
         env:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
@@ -53,11 +48,8 @@ jobs:
 
           git config user.email "actions@github.com"
 
-
           git add generated/topics.js
 
-
           git commit -m "Auto generate LinkedIn topics" || echo "No changes"
-
 
           git push
