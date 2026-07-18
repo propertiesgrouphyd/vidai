@@ -941,7 +941,10 @@ const VW_CATEGORIES = Object.freeze([
             "Building credibility, trust, and professional visibility."
     }
 
+]);
 
+
+Object.freeze(VW_CATEGORIES);
 
 
 
