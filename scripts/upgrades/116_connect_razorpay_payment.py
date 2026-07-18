@@ -1,90 +1,32 @@
-import { getUniqueId } from "./identity-manager.js";
+from pathlib import Path
 
-function openPaymentModal() {
+file = Path("engine/payment-manager.js")
 
-    const modal =
-        document.getElementById(
-            "vw-payment-modal"
-        );
-
-    if (!modal) return;
-
-    modal.hidden = false;
-
-    modal.setAttribute(
-        "aria-hidden",
-        "false"
-    );
-
-    document.body.style.overflow = "hidden";
-
-}
+text = file.read_text(encoding="utf-8")
 
 
-function closePaymentModal() {
+# Add identity import
+if 'identity-manager.js' not in text:
 
-    const modal =
-        document.getElementById(
-            "vw-payment-modal"
-        );
-
-    if (!modal) return;
-
-    modal.hidden = true;
-
-    modal.setAttribute(
-        "aria-hidden",
-        "true"
-    );
-
-    document.body.style.overflow = "";
-
-}
+    text = (
+        'import { getUniqueId } from "./identity-manager.js";\n\n'
+        + text
+    )
 
 
-function initializePaymentModal() {
-
-
-    const closeButton =
-        document.getElementById(
-            "vw-payment-close-btn"
-        );
-
-
-    if (closeButton) {
-
-        closeButton.addEventListener(
+old = '''        payment.addEventListener(
             "click",
-            closePaymentModal
-        );
+            () => {
 
-    }
+                console.log(
+                    "Payment flow started"
+                );
 
-    const cancel =
-        document.getElementById(
-            "vw-payment-cancel-btn"
-        );
-
-
-    if (cancel) {
-
-        cancel.addEventListener(
-            "click",
-            closePaymentModal
-        );
-
-    }
+            }
+        );'''
 
 
-    const payment =
-        document.getElementById(
-            "vw-payment-btn"
-        );
-
-
-    if (payment) {
-
-        payment.addEventListener(
+new = '''        payment.addEventListener(
             "click",
             async () => {
 
@@ -258,42 +200,22 @@ function initializePaymentModal() {
 
 
             }
-        );
+        );'''
 
 
-    }
+if old not in text:
 
-    const modal =
-        document.getElementById(
-            "vw-payment-modal"
-        );
-
-    if (modal) {
-
-        modal.addEventListener(
-            "click",
-            e => {
-
-                if (
-                    e.target === modal
-                ) {
-
-                    closePaymentModal();
-
-                }
-
-            }
-        );
-
-    }
-
-}
+    print("ERROR: payment click block not found")
+    exit(1)
 
 
-export {
+text = text.replace(
+    old,
+    new,
+    1
+)
 
-    openPaymentModal,
-    closePaymentModal,
-    initializePaymentModal
 
-};
+file.write_text(text, encoding="utf-8")
+
+print("Razorpay payment flow connected")
