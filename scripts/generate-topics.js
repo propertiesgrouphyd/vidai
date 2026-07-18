@@ -25,12 +25,12 @@ const GROQ_API_KEY =
 
 
 /*
-    Extract array from frontend JS files
+    Read array from frontend JS files
 
     Supports:
 
     const VW_CATEGORIES = Object.freeze([
-       ...
+        ...
     ]);
 
 */
@@ -46,13 +46,9 @@ function loadArrayFromJS(filePath, variableName) {
         );
 
 
-    const declaration =
-        `const ${variableName}`;
-
-
     const start =
         content.indexOf(
-            declaration
+            `const ${variableName}`
         );
 
 
@@ -84,7 +80,6 @@ function loadArrayFromJS(filePath, variableName) {
 
 
     let depth = 0;
-
     let arrayEnd = -1;
 
 
@@ -104,7 +99,6 @@ function loadArrayFromJS(filePath, variableName) {
 
 
         else if (content[i] === "]") {
-
 
             depth--;
 
@@ -139,7 +133,6 @@ function loadArrayFromJS(filePath, variableName) {
         );
 
 
-
     return eval(arrayText);
 
 }
@@ -147,8 +140,8 @@ function loadArrayFromJS(filePath, variableName) {
 
 
 
-function getPurposes() {
 
+function getPurposes() {
 
     return loadArrayFromJS(
         PURPOSE_FILE,
@@ -160,8 +153,8 @@ function getPurposes() {
 
 
 
-function getCategories() {
 
+function getCategories() {
 
     return loadArrayFromJS(
         CATEGORY_FILE,
@@ -169,6 +162,23 @@ function getCategories() {
     );
 
 }
+
+
+
+
+
+
+
+function sleep(ms) {
+
+    return new Promise(
+        resolve => setTimeout(resolve, ms)
+    );
+
+}
+
+
+
 
 
 
@@ -183,6 +193,7 @@ You are a world-class LinkedIn content strategist.
 
 Generate LinkedIn post topics.
 
+
 Purpose:
 ${category.purpose}
 
@@ -191,7 +202,7 @@ Category:
 ${category.label}
 
 
-Category description:
+Category Description:
 ${category.description}
 
 
@@ -200,17 +211,16 @@ Generate exactly 30 unique topics.
 
 Rules:
 
-- Global audience
+- Global LinkedIn audience
 - Professional quality
-- Suitable for LinkedIn
-- Useful for professionals
-- No duplicates
+- Useful and actionable
+- No duplicate ideas
 - No hashtags
 - No emojis
 - Avoid generic topics
 
 
-Return ONLY JSON.
+Return ONLY valid JSON.
 
 
 Format:
@@ -224,64 +234,123 @@ Format:
  }
 ]
 
-
 `;
 
 
 
-    const response =
-        await fetch(
-            "https://api.groq.com/openai/v1/chat/completions",
-            {
-
-                method: "POST",
-
-
-                headers: {
-
-                    "Authorization":
-                    `Bearer ${GROQ_API_KEY}`,
-
-                    "Content-Type":
-                    "application/json"
-
-                },
-
-
-                body: JSON.stringify({
-
-                    model:
-                    "llama-3.3-70b-versatile",
-
-
-                    temperature:
-                    0.3,
-
-
-                    messages: [
-
-                        {
-                            role:"user",
-                            content:prompt
-                        }
-
-                    ]
-
-                })
-
-            }
-        );
+    let attempts = 0;
 
 
 
-    const data =
-        await response.json();
+    while (attempts < 5) {
+
+
+        attempts++;
+
+
+        const response =
+            await fetch(
+                "https://api.groq.com/openai/v1/chat/completions",
+                {
+
+                    method:"POST",
+
+
+                    headers:{
+
+                        "Authorization":
+                        `Bearer ${GROQ_API_KEY}`,
+
+
+                        "Content-Type":
+                        "application/json"
+
+                    },
+
+
+                    body:JSON.stringify({
+
+                        model:
+                        "llama-3.3-70b-versatile",
+
+
+                        temperature:
+                        0.3,
+
+
+                        messages:[
+
+                            {
+                                role:"user",
+                                content:prompt
+                            }
+
+                        ]
+
+                    })
+
+                }
+            );
 
 
 
-    if (!data.choices) {
+        const data =
+            await response.json();
+
+
+
+        if (response.ok && data.choices) {
+
+
+            let text =
+                data.choices[0]
+                .message
+                .content;
+
+
+
+            text =
+                text
+                .replace(/```json/g,"")
+                .replace(/```/g,"")
+                .trim();
+
+
+
+            return JSON.parse(text);
+
+        }
+
+
+
+
+        if (
+            data.error &&
+            data.error.code === "rate_limit_exceeded"
+        ) {
+
+
+            console.log(
+                "Groq rate limit reached."
+            );
+
+
+            console.log(
+                "Waiting 20 seconds..."
+            );
+
+
+            await sleep(20000);
+
+
+            continue;
+
+        }
+
+
 
         console.log(data);
+
 
         throw new Error(
             "Groq API failed"
@@ -291,24 +360,15 @@ Format:
 
 
 
-    let text =
-        data.choices[0]
-        .message
-        .content;
-
-
-
-    text =
-        text
-        .replace(/```json/g, "")
-        .replace(/```/g, "")
-        .trim();
-
-
-
-    return JSON.parse(text);
+    throw new Error(
+        "Groq failed after 5 attempts"
+    );
 
 }
+
+
+
+
 
 
 
@@ -327,6 +387,7 @@ async function generateTopics() {
 
 
 
+
     const purposes =
         getPurposes();
 
@@ -337,10 +398,12 @@ async function generateTopics() {
 
 
 
+
     console.log(
         "Purposes:",
         purposes.length
     );
+
 
 
     console.log(
@@ -350,17 +413,27 @@ async function generateTopics() {
 
 
 
+
     let topics = [];
 
 
 
 
-    for (const category of categories) {
+
+    for (
+        let i = 0;
+        i < categories.length;
+        i++
+    ) {
+
+
+        const category =
+            categories[i];
 
 
 
         console.log(
-            "Generating:",
+            `[${i + 1}/${categories.length}]`,
             category.purpose,
             "→",
             category.label
@@ -381,7 +454,17 @@ async function generateTopics() {
 
 
 
+        /*
+            Prevent Groq TPM limit
+        */
+
+        await sleep(5000);
+
+
     }
+
+
+
 
 
 
@@ -416,6 +499,8 @@ Object.freeze(VW_TOPICS);
 
 
 
+
+
     fs.mkdirSync(
 
         path.dirname(OUTPUT_FILE),
@@ -425,6 +510,7 @@ Object.freeze(VW_TOPICS);
         }
 
     );
+
 
 
 
@@ -438,14 +524,17 @@ Object.freeze(VW_TOPICS);
 
 
 
-    console.log(
 
+    console.log(
         "Generated Topics:",
         topics.length
-
     );
 
 }
+
+
+
+
 
 
 
@@ -455,7 +544,11 @@ function validateTopics() {
 
 
 
-    if (!fs.existsSync(OUTPUT_FILE)) {
+    if (
+        !fs.existsSync(
+            OUTPUT_FILE
+        )
+    ) {
 
 
         throw new Error(
@@ -467,11 +560,13 @@ function validateTopics() {
 
 
 
+
     const content =
         fs.readFileSync(
             OUTPUT_FILE,
             "utf8"
         );
+
 
 
 
@@ -491,12 +586,15 @@ function validateTopics() {
 
 
 
+
     console.log(
         "Validation successful"
     );
 
-
 }
+
+
+
 
 
 
@@ -512,7 +610,6 @@ if (
 
 
 }
-
 else {
 
 
