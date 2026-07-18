@@ -19,21 +19,29 @@ const OUTPUT_FILE =
     path.join(ROOT, "generated", "topics.js");
 
 
+const PROGRESS_FILE =
+    path.join(ROOT, "generated", "topics-progress.json");
+
+
 const GROQ_API_KEY =
     process.env.GROQ_API_KEY;
 
 
 
-/*
-    Read array from frontend JS files
 
-    Supports:
 
-    const VW_CATEGORIES = Object.freeze([
-        ...
-    ]);
+function sleep(ms) {
 
-*/
+    return new Promise(
+        resolve => setTimeout(resolve, ms)
+    );
+
+}
+
+
+
+
+
 
 
 function loadArrayFromJS(filePath, variableName) {
@@ -69,17 +77,8 @@ function loadArrayFromJS(filePath, variableName) {
         );
 
 
-    if (arrayStart === -1) {
-
-        throw new Error(
-            `${variableName} array missing`
-        );
-
-    }
-
-
-
     let depth = 0;
+
     let arrayEnd = -1;
 
 
@@ -99,6 +98,7 @@ function loadArrayFromJS(filePath, variableName) {
 
 
         else if (content[i] === "]") {
+
 
             depth--;
 
@@ -133,9 +133,12 @@ function loadArrayFromJS(filePath, variableName) {
         );
 
 
+
     return eval(arrayText);
 
 }
+
+
 
 
 
@@ -149,6 +152,8 @@ function getPurposes() {
     );
 
 }
+
+
 
 
 
@@ -169,19 +174,6 @@ function getCategories() {
 
 
 
-function sleep(ms) {
-
-    return new Promise(
-        resolve => setTimeout(resolve, ms)
-    );
-
-}
-
-
-
-
-
-
 
 
 async function generateWithGroq(category) {
@@ -189,7 +181,7 @@ async function generateWithGroq(category) {
 
     const prompt = `
 
-You are a world-class LinkedIn content strategist.
+You are a global LinkedIn content strategist.
 
 Generate LinkedIn post topics.
 
@@ -202,17 +194,18 @@ Category:
 ${category.label}
 
 
-Category Description:
+Description:
 ${category.description}
 
 
-Generate exactly 30 unique topics.
+
+Generate exactly 20 topics.
 
 
 Rules:
 
-- Global LinkedIn audience
-- Professional quality
+- Global audience
+- Professional LinkedIn quality
 - Useful and actionable
 - No duplicate ideas
 - No hashtags
@@ -220,7 +213,7 @@ Rules:
 - Avoid generic topics
 
 
-Return ONLY valid JSON.
+Return ONLY JSON.
 
 
 Format:
@@ -238,14 +231,16 @@ Format:
 
 
 
+
     let attempts = 0;
 
 
 
-    while (attempts < 5) {
+    while(attempts < 10) {
 
 
         attempts++;
+
 
 
         const response =
@@ -261,7 +256,6 @@ Format:
                         "Authorization":
                         `Bearer ${GROQ_API_KEY}`,
 
-
                         "Content-Type":
                         "application/json"
 
@@ -275,7 +269,7 @@ Format:
 
 
                         temperature:
-                        0.3,
+                        0.2,
 
 
                         messages:[
@@ -299,7 +293,8 @@ Format:
 
 
 
-        if (response.ok && data.choices) {
+
+        if(response.ok && data.choices){
 
 
             let text =
@@ -324,28 +319,26 @@ Format:
 
 
 
-        if (
+
+
+        if(
             data.error &&
             data.error.code === "rate_limit_exceeded"
-        ) {
+        ){
 
 
             console.log(
-                "Groq rate limit reached."
+                "Groq limit reached. Waiting 60 seconds..."
             );
 
 
-            console.log(
-                "Waiting 20 seconds..."
-            );
-
-
-            await sleep(20000);
+            await sleep(60000);
 
 
             continue;
 
         }
+
 
 
 
@@ -356,12 +349,13 @@ Format:
             "Groq API failed"
         );
 
+
     }
 
 
 
     throw new Error(
-        "Groq failed after 5 attempts"
+        "Groq failed after retries"
     );
 
 }
@@ -374,99 +368,41 @@ Format:
 
 
 
-async function generateTopics() {
+function saveProgress(topics) {
 
 
-    if (!GROQ_API_KEY) {
-
-        throw new Error(
-            "GROQ_API_KEY missing"
-        );
-
-    }
-
-
-
-
-    const purposes =
-        getPurposes();
-
-
-
-    const categories =
-        getCategories();
-
-
-
-
-    console.log(
-        "Purposes:",
-        purposes.length
+    fs.mkdirSync(
+        path.dirname(PROGRESS_FILE),
+        {
+            recursive:true
+        }
     );
 
 
 
-    console.log(
-        "Categories:",
-        categories.length
+    fs.writeFileSync(
+
+        PROGRESS_FILE,
+
+        JSON.stringify(
+            topics,
+            null,
+            4
+        )
+
     );
 
-
-
-
-    let topics = [];
-
-
-
-
-
-    for (
-        let i = 0;
-        i < categories.length;
-        i++
-    ) {
-
-
-        const category =
-            categories[i];
-
-
-
-        console.log(
-            `[${i + 1}/${categories.length}]`,
-            category.purpose,
-            "→",
-            category.label
-        );
-
-
-
-        const result =
-            await generateWithGroq(
-                category
-            );
-
-
-
-        topics.push(
-            ...result
-        );
-
-
-
-        /*
-            Prevent Groq TPM limit
-        */
-
-        await sleep(5000);
-
-
-    }
+}
 
 
 
 
 
+
+
+
+
+function createFinalTopics(topics) {
 
 
     const output =
@@ -488,7 +424,7 @@ async function generateTopics() {
 
 const VW_TOPICS = Object.freeze(
 
-${JSON.stringify(topics, null, 4)}
+${JSON.stringify(topics,null,4)}
 
 );
 
@@ -498,36 +434,9 @@ Object.freeze(VW_TOPICS);
 
 
 
-
-
-
-    fs.mkdirSync(
-
-        path.dirname(OUTPUT_FILE),
-
-        {
-            recursive:true
-        }
-
-    );
-
-
-
-
     fs.writeFileSync(
-
         OUTPUT_FILE,
-
         output
-
-    );
-
-
-
-
-    console.log(
-        "Generated Topics:",
-        topics.length
     );
 
 }
@@ -540,24 +449,212 @@ Object.freeze(VW_TOPICS);
 
 
 
-function validateTopics() {
+async function generateTopics() {
 
 
-
-    if (
-        !fs.existsSync(
-            OUTPUT_FILE
-        )
-    ) {
-
+    if(!GROQ_API_KEY){
 
         throw new Error(
-            "topics.js missing"
+            "GROQ_API_KEY missing"
+        );
+
+    }
+
+
+
+
+    const purposes =
+        getPurposes();
+
+
+
+    const categories =
+        getCategories();
+
+
+
+
+
+    console.log(
+        "Purposes:",
+        purposes.length
+    );
+
+
+
+    console.log(
+        "Categories:",
+        categories.length
+    );
+
+
+
+
+
+    let topics = [];
+
+
+
+
+    if(
+        fs.existsSync(
+            PROGRESS_FILE
+        )
+    ){
+
+
+        topics =
+            JSON.parse(
+                fs.readFileSync(
+                    PROGRESS_FILE,
+                    "utf8"
+                )
+            );
+
+
+        console.log(
+            "Resuming:",
+            topics.length,
+            "topics already generated"
         );
 
 
     }
 
+
+
+
+
+
+    for(
+        let i=0;
+        i<categories.length;
+        i++
+    ){
+
+
+
+        const category =
+            categories[i];
+
+
+
+
+        const exists =
+            topics.some(
+                t =>
+                t.category === category.id
+            );
+
+
+
+        if(exists){
+
+
+            console.log(
+                "Skipping:",
+                category.label
+            );
+
+
+            continue;
+
+        }
+
+
+
+
+
+
+        console.log(
+
+            `[${i+1}/${categories.length}]`,
+            category.purpose,
+            "→",
+            category.label
+
+        );
+
+
+
+
+
+
+        const result =
+            await generateWithGroq(
+                category
+            );
+
+
+
+
+        topics.push(
+            ...result
+        );
+
+
+
+        saveProgress(
+            topics
+        );
+
+
+
+        console.log(
+            "Saved:",
+            topics.length,
+            "topics"
+        );
+
+
+
+
+        await sleep(30000);
+
+
+    }
+
+
+
+
+
+    createFinalTopics(
+        topics
+    );
+
+
+
+    console.log(
+        "Completed:",
+        topics.length,
+        "topics"
+    );
+
+}
+
+
+
+
+
+
+
+
+
+function validateTopics(){
+
+
+
+    if(
+        !fs.existsSync(
+            OUTPUT_FILE
+        )
+    ){
+
+        throw new Error(
+            "topics.js missing"
+        );
+
+    }
 
 
 
@@ -569,21 +666,17 @@ function validateTopics() {
 
 
 
-
-    if (
+    if(
         !content.includes(
             "VW_TOPICS"
         )
-    ) {
-
+    ){
 
         throw new Error(
             "Invalid topics.js"
         );
 
-
     }
-
 
 
 
@@ -600,20 +693,15 @@ function validateTopics() {
 
 
 
-
-if (
+if(
     process.argv.includes("--validate")
-) {
-
+){
 
     validateTopics();
 
-
 }
-else {
-
+else{
 
     generateTopics();
-
 
 }
