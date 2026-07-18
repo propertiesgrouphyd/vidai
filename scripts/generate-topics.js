@@ -1,92 +1,120 @@
 "use strict";
 
-
 const fs = require("fs");
 const path = require("path");
 
 
-const GROQ_API_KEY = process.env.GROQ_API_KEY;
-
-
 const ROOT = path.join(__dirname, "..");
 
-
-const PURPOSE_FILE =
-    path.join(ROOT, "purposes.js");
-
-
-const CATEGORY_FILE =
-    path.join(ROOT, "categories.js");
-
+const PURPOSE_FILE = path.join(ROOT, "purposes.js");
+const CATEGORY_FILE = path.join(ROOT, "categories.js");
 
 const OUTPUT_FILE =
     path.join(ROOT, "generated", "topics.js");
 
 
-
-function loadJS(file){
-
-    let content = fs.readFileSync(file,"utf8");
-
-    content =
-        content
-        .replace(/const .*?=\s*Object\.freeze\(/,"")
-        .replace(/\);\s*Object\.freeze\(.*?\);/s,"")
-        .replace(/\);\s*$/,"");
+const GROQ_API_KEY = process.env.GROQ_API_KEY;
 
 
-    return eval(content);
+
+function loadArrayFromJS(filePath, variableName) {
+
+    const content = fs.readFileSync(filePath, "utf8");
+
+
+    const start =
+        content.indexOf(`const ${variableName}`);
+
+
+    if (start === -1) {
+        throw new Error(
+            `${variableName} not found in ${filePath}`
+        );
+    }
+
+
+    const arrayStart =
+        content.indexOf("[", start);
+
+
+    const arrayEnd =
+        content.indexOf("]);", arrayStart);
+
+
+    if (arrayStart === -1 || arrayEnd === -1) {
+        throw new Error(
+            `Cannot extract ${variableName}`
+        );
+    }
+
+
+    const arrayText =
+        content.substring(
+            arrayStart,
+            arrayEnd + 1
+        );
+
+
+    return eval(arrayText);
+}
+
+
+
+function getCategories() {
+
+    return loadArrayFromJS(
+        CATEGORY_FILE,
+        "VW_CATEGORIES"
+    );
 
 }
 
 
 
-function extractCategories(){
+function getPurposes() {
 
-
-    const categories =
-        loadJS(CATEGORY_FILE);
-
-
-    return categories;
+    return loadArrayFromJS(
+        PURPOSE_FILE,
+        "VW_PURPOSES"
+    );
 
 }
 
 
 
 
-async function askGroq(category){
+async function generateWithGroq(category) {
 
 
     const prompt = `
 
 You are a global LinkedIn content strategist.
 
-Create professional LinkedIn post topics.
+Generate professional LinkedIn post topics.
 
 Purpose:
 ${category.purpose}
-
 
 Category:
 ${category.label}
 
 
-Generate exactly 40 topics.
-
+Create exactly 30 unique topics.
 
 Rules:
 
 - Global audience
-- Professional
-- No duplicate ideas
+- Professional quality
 - Suitable for LinkedIn
 - No hashtags
 - No emojis
-- No marketing spam
+- No duplicate ideas
+- Do not create generic topics
 
 
-Return JSON only:
+Return ONLY JSON.
+
+Format:
 
 [
  {
@@ -103,40 +131,42 @@ Return JSON only:
 
     const response =
         await fetch(
-        "https://api.groq.com/openai/v1/chat/completions",
-        {
+            "https://api.groq.com/openai/v1/chat/completions",
+            {
 
-        method:"POST",
+                method: "POST",
 
-        headers:{
-            "Authorization":
-            `Bearer ${GROQ_API_KEY}`,
+                headers: {
 
-            "Content-Type":
-            "application/json"
-        },
+                    "Authorization":
+                    `Bearer ${GROQ_API_KEY}`,
+
+                    "Content-Type":
+                    "application/json"
+
+                },
 
 
-        body:JSON.stringify({
+                body: JSON.stringify({
 
-            model:
-            "llama-3.3-70b-versatile",
+                    model:
+                    "llama-3.3-70b-versatile",
 
-            temperature:
-            0.4,
+                    temperature:
+                    0.4,
 
-            messages:[
+                    messages: [
 
-                {
-                role:"user",
-                content:prompt
-                }
+                        {
+                            role:"user",
+                            content:prompt
+                        }
 
-            ]
+                    ]
 
-        })
+                })
 
-        });
+            });
 
 
 
@@ -145,76 +175,109 @@ Return JSON only:
 
 
 
-    let text =
+    let output =
         data.choices[0]
-        .message.content;
+        .message
+        .content;
 
 
-    text =
-    text.replace(/```json/g,"")
+    output =
+        output
+        .replace(/```json/g,"")
         .replace(/```/g,"")
         .trim();
 
 
-
-    return JSON.parse(text);
+    return JSON.parse(output);
 
 }
 
 
 
 
-async function generate(){
+async function generateTopics() {
 
 
-    if(!GROQ_API_KEY){
+    if (!GROQ_API_KEY) {
 
         throw new Error(
-        "Missing GROQ_API_KEY"
+            "GROQ_API_KEY missing"
         );
 
     }
+
+
+
+    const purposes =
+        getPurposes();
 
 
     const categories =
-        extractCategories();
+        getCategories();
 
 
 
-    let topics=[];
+    console.log(
+        "Purposes:",
+        purposes.length
+    );
+
+
+    console.log(
+        "Categories:",
+        categories.length
+    );
 
 
 
-    for(const category of categories){
+    let topics = [];
+
+
+
+    for (const category of categories) {
 
 
         console.log(
-        "Generating:",
-        category.label
+            "Generating:",
+            category.purpose,
+            "→",
+            category.label
         );
 
 
+
         const result =
-            await askGroq(category);
+            await generateWithGroq(category);
 
 
 
-        topics.push(...result);
+        topics.push(
+            ...result
+        );
 
 
     }
 
 
 
-    const output =
+    fs.mkdirSync(
+        path.dirname(OUTPUT_FILE),
+        {
+            recursive:true
+        }
+    );
+
+
+
+    const fileContent =
 
 `"use strict";
 
 /* ==========================================================================
    VIDHWAAN AI Writer
-   Generated Topic Library
 
-   Auto Generated By GitHub Actions + Groq AI
+   Auto Generated Topics
+   Generated by GitHub Actions + Groq AI
    ========================================================================== */
 
 
@@ -228,69 +291,71 @@ Object.freeze(VW_TOPICS);
 
 
 
-    fs.mkdirSync(
-        path.dirname(OUTPUT_FILE),
-        {
-            recursive:true
-        }
-    );
-
-
     fs.writeFileSync(
         OUTPUT_FILE,
-        output
+        fileContent
     );
+
 
 
     console.log(
-    "Generated:",
-    topics.length,
-    "topics"
+        "Created",
+        topics.length,
+        "topics"
     );
-
 
 }
 
 
 
 
-function validate(){
+function validate() {
 
 
-    const file =
-    fs.readFileSync(
-        OUTPUT_FILE,
-        "utf8"
-    );
-
-
-    if(!file.includes("VW_TOPICS")){
+    if (!fs.existsSync(OUTPUT_FILE)) {
 
         throw new Error(
-        "Invalid topics.js"
+            "topics.js not found"
+        );
+
+    }
+
+
+    const content =
+        fs.readFileSync(
+            OUTPUT_FILE,
+            "utf8"
+        );
+
+
+    if (!content.includes("VW_TOPICS")) {
+
+        throw new Error(
+            "Invalid topics.js"
         );
 
     }
 
 
     console.log(
-    "Validation successful"
+        "Validation successful"
     );
-
 
 }
 
 
 
-if(
-process.argv.includes("--validate")
-){
+
+
+if (
+    process.argv.includes("--validate")
+) {
 
     validate();
 
 }
-else{
+else {
 
-    generate();
+    generateTopics();
 
 }
