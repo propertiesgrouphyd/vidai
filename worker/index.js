@@ -1,5 +1,5 @@
 const SUBSCRIPTION_DAYS = 30;
-const AMOUNT = 100; // ₹1
+const AMOUNT = 3000; // ₹30
 
 
 export default {
