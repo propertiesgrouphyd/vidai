@@ -6,9 +6,6 @@ on:
   workflow_dispatch:
 
 
-  schedule:
-
-    - cron: "0 2 * * *"
 
 
 
@@ -24,6 +21,9 @@ jobs:
   generate-topics:
 
 
+    name: Generate Topics With Groq
+
+
     runs-on: ubuntu-latest
 
 
@@ -32,7 +32,6 @@ jobs:
 
 
     steps:
-
 
 
       - name: Checkout Repository
@@ -47,7 +46,7 @@ jobs:
 
 
 
-      - name: Setup Node.js
+      - name: Setup Node.js 22
 
         uses: actions/setup-node@v4
 
@@ -59,13 +58,11 @@ jobs:
 
 
 
-      - name: Check Node Version
+      - name: Verify Node
 
         run: |
 
           node --version
-
-          npm --version
 
 
 
@@ -75,8 +72,7 @@ jobs:
 
         env:
 
-          GROQ_API_KEY:
-            ${{ secrets.GROQ_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
 
         run: |
 
@@ -86,7 +82,7 @@ jobs:
 
 
 
-      - name: Validate Topics
+      - name: Validate Generated Topics
 
         run: |
 
@@ -96,7 +92,19 @@ jobs:
 
 
 
-      - name: Commit Generated Files
+      - name: Check Generated Files
+
+        run: |
+
+          echo "Generated files:"
+
+          ls -lh generated/
+
+
+
+
+      - name: Commit Changes
+
 
         run: |
 
@@ -106,18 +114,21 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
 
+
           git add generated/topics.js
 
           git add generated/topics-progress.json
 
 
-          git diff --cached --quiet || git commit -m "Auto generate AI topics"
+
+          git diff --cached --quiet || git commit -m "Auto update VIDHWAAN AI topics"
 
 
 
 
 
       - name: Push Changes
+
 
         run: |
 
