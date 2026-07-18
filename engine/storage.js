@@ -1,95 +1,216 @@
 "use strict";
 
+/* ==========================================================================
+   VIDHWAAN AI Writer
+   Storage Manager
 
-const STORAGE_KEY = "vidhwaan-ai-preferences";
+   Stores:
 
+   - Groq API Key
+   - Unique ID
+   - Expiry
+   - Last Subscription Check
 
-function save(values = {}) {
-
-    const data = {
-
-        purpose: values.purpose || "",
-
-        category: values.category || "",
-
-        topic: values.topic || "",
-
-        goal: values.goal || "",
-
-        contentStyle: values.contentStyle || "",
-
-        audience: values.audience || "",
-
-        length: values.length || "",
-
-        platform: values.platform || "",
-
-        language: values.language || "",
-
-        creativity: values.creativity || "",
-
-        emoji: values.emoji || "",
-
-        cta: values.cta || ""
-
-    };
+   ========================================================================== */
 
 
-    localStorage.setItem(
-
-        STORAGE_KEY,
-
-        JSON.stringify(data)
-
-    );
+const Storage = {
 
 
-    return data;
+    setString(key, value){
 
-}
+        localStorage.setItem(
+            key,
+            String(value)
+        );
+
+        return true;
+
+    },
 
 
-function load() {
-
-    const value =
-        localStorage.getItem(STORAGE_KEY);
 
 
-    if (!value) {
+    getString(key, fallback=""){
 
-        return {};
+        const value =
+        localStorage.getItem(key);
+
+
+        return value === null
+            ? fallback
+            : value;
+
+    },
+
+
+
+
+
+    setObject(key, value){
+
+        localStorage.setItem(
+            key,
+            JSON.stringify(value)
+        );
+
+        return true;
+
+    },
+
+
+
+
+
+    getObject(key, fallback=null){
+
+        try{
+
+
+            const value =
+            localStorage.getItem(key);
+
+
+
+            return value === null
+                ? fallback
+                : JSON.parse(value);
+
+
+        }
+        catch(error){
+
+            return fallback;
+
+        }
+
+
+    },
+
+
+
+
+
+
+    remove(key){
+
+        localStorage.removeItem(key);
+
+    },
+
+
+
+
+
+
+
+    clear(){
+
+        localStorage.clear();
+
+    },
+
+
+
+
+
+
+
+    saveApiKey(key){
+
+
+        return this.setString(
+
+            VW_CONFIG.STORAGE_KEYS.API_KEY,
+
+            key
+
+        );
+
+
+    },
+
+
+
+
+
+
+
+    getApiKey(){
+
+
+        return this.getString(
+
+            VW_CONFIG.STORAGE_KEYS.API_KEY,
+
+            ""
+
+        );
+
+
+    },
+
+
+
+
+
+
+
+
+    saveSubscription(data){
+
+
+        if(data.uniqueId){
+
+
+            this.setString(
+
+                VW_CONFIG.STORAGE_KEYS.UNIQUE_ID,
+
+                data.uniqueId
+
+            );
+
+
+        }
+
+
+
+        if(data.expires){
+
+
+            this.setString(
+
+                VW_CONFIG.STORAGE_KEYS.EXPIRY,
+
+                data.expires
+
+            );
+
+
+        }
+
+
+
+
+        this.setString(
+
+            VW_CONFIG.STORAGE_KEYS.LAST_CHECK,
+
+            Date.now()
+
+        );
+
 
     }
 
 
-    try {
-
-        return JSON.parse(value);
-
-    }
-
-    catch {
-
-        return {};
-
-    }
-
-}
 
 
-function clear() {
 
-    localStorage.removeItem(STORAGE_KEY);
-
-}
-
-
-export {
-
-    save,
-
-    load,
-
-    clear
 
 };
+
+
+
+export default Storage;

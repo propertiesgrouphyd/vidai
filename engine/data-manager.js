@@ -1,90 +1,309 @@
+"use strict";
+
+
 import * as data from "../data/index.js";
+
+
+
+
 
 const DataManager = Object.freeze({
 
-    getPurposes() {
-        return data.purposes;
-    },
 
-    getCategories() {
-        return data.categories;
-    },
 
-    getTopics() {
-        return data.topics;
-    },
+    getPurposes(){
 
-    getGoals() {
-        return data.goals;
-    },
+        return data.purposes || [];
 
-    getContentStyles() {
-        return data.contentStyles;
-    },
-
-    getAudiences() {
-        return data.audiences;
-    },
-
-    getLengths() {
-        return data.lengths;
-    },
-
-    getPlatforms() {
-        return data.platforms;
-    },
-
-    getLanguages() {
-        return data.languages;
-    },
-
-    getCreativityLevels() {
-        return data.creativity;
-    },
-
-    getEmojiOptions() {
-        return data.emojis;
-    },
-
-    getCTAOptions() {
-        return data.ctas;
     },
 
 
-    getCategoriesByPurpose(purpose) {
 
-        return data.categories.filter(
+    getCategories(){
 
-            item => item.purpose === purpose
+        return data.categories || [];
+
+    },
+
+
+
+    getTopics(){
+
+        return data.topics || [];
+
+    },
+
+
+
+    getGoals(){
+
+        return data.goals || [];
+
+    },
+
+
+
+    getContentStyles(){
+
+        return data.contentStyles || [];
+
+    },
+
+
+
+    getAudiences(){
+
+        return data.audiences || [];
+
+    },
+
+
+
+    getLengths(){
+
+        return data.lengths || [];
+
+    },
+
+
+
+    getPlatforms(){
+
+        return data.platforms || [];
+
+    },
+
+
+
+    getLanguages(){
+
+        return data.languages || [];
+
+    },
+
+
+
+    getCreativityLevels(){
+
+        return data.creativity || [];
+
+    },
+
+
+
+    getEmojiOptions(){
+
+        return data.emojis || [];
+
+    },
+
+
+
+    getCTAOptions(){
+
+        return data.ctas || [];
+
+    },
+
+
+
+
+
+
+    /*
+        Purpose → Categories
+    */
+
+
+    getCategoriesByPurpose(purpose){
+
+
+        if(!purpose){
+
+            return [];
+
+        }
+
+
+
+        return (
+
+            data.categories || []
+
+        )
+
+        .filter(
+
+            item =>
+
+            item.purpose === purpose
 
         );
 
+
+
     },
 
 
-    getTopicsByCategory(category) {
 
-        return data.topics.filter(
 
-            item => item.category === category
+
+
+
+    /*
+        Category → Topics
+    */
+
+
+    getTopicsByCategory(category){
+
+
+        if(!category){
+
+            return [];
+
+        }
+
+
+
+        const topics =
+
+
+        (
+
+            data.topics || []
+
+        )
+
+        .filter(
+
+            item =>
+
+            item.category === category
 
         );
 
+
+
+
+
+
+        /*
+            Remove duplicate topic IDs
+        */
+
+
+        return topics.filter(
+
+            (item,index,array)=>
+
+            index ===
+
+            array.findIndex(
+
+                x => x.id === item.id
+
+            )
+
+
+        );
+
+
+
     },
 
 
-    getCategory(id) {
-        return data.categories.find(item => item.id === id) || null;
+
+
+
+
+
+
+
+    getCategory(id){
+
+
+        return (
+
+            data.categories || []
+
+        )
+
+        .find(
+
+            item => item.id === id
+
+        )
+
+        ||
+
+        null;
+
+
     },
 
-    getTopic(id) {
-        return data.topics.find(item => item.id === id) || null;
+
+
+
+
+
+
+    getTopic(id){
+
+
+        return (
+
+            data.topics || []
+
+        )
+
+        .find(
+
+            item => item.id === id
+
+        )
+
+        ||
+
+        null;
+
+
     },
 
-    getPurpose(id) {
-        return data.purposes.find(item => item.id === id) || null;
+
+
+
+
+
+
+    getPurpose(id){
+
+
+        return (
+
+            data.purposes || []
+
+        )
+
+        .find(
+
+            item => item.id === id
+
+        )
+
+        ||
+
+        null;
+
+
     }
 
+
+
 });
+
+
+
+
 
 export default DataManager;

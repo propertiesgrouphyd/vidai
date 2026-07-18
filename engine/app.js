@@ -1,38 +1,413 @@
 "use strict";
 
-import { UI, initializeDropdowns, getValues } from "./ui-manager.js";
-import { validate } from "./validator.js";
-import { save, load } from "./storage.js";
-import { buildContext } from "./context-builder.js";
-import { buildPrompt } from "./prompt-builder.js";
-import { generateContent } from "./ai-client.js";
-import * as Output from "./output-renderer.js";
-import { ensureApiKey, initializeApiModal } from "./api-manager.js";
-import { ensureUniqueId } from "./identity-manager.js";
-import { checkSubscription } from "./subscription-manager.js";
-import { openPaymentModal, initializePaymentModal } from "./payment-manager.js";
+/* ==========================================================================
+   VIDHWAAN AI Writer
+   Application Controller
+   ========================================================================== */
+
+
+import {
+    UI,
+    initializeDropdowns,
+    getValues
+} from "./ui-manager.js";
+
+
+import Storage from "./storage.js";
+
+import PaymentManager from "./payment-manager.js";
+
+import SubscriptionManager from "./subscription-manager.js";
+
+import AIClient from "./ai-client.js";
+
+import PromptBuilder from "./prompt-builder.js";
 
 
 
 
 
-const AI_CONFIG = {
+const App = {
 
-    baseUrl:
-        window.VW_CONFIG.API.BASE_URL +
-        window.VW_CONFIG.API.CHAT_ENDPOINT,
 
-    apiKey:
-        localStorage.getItem(
-            window.VW_CONFIG.STORAGE_KEYS.API_KEY
-        ),
 
-    model:
-        window.VW_CONFIG.API.MODEL,
+    init(){
 
-    temperature: 0.7,
 
-    maxTokens: 4096
+        initializeDropdowns();
+
+
+        this.bindEvents();
+
+
+        this.restoreApiKey();
+
+
+        console.log(
+            "VIDHWAAN AI Writer Ready"
+        );
+
+
+    },
+
+
+
+
+
+    bindEvents(){
+
+
+        const form =
+        document.getElementById(
+            "vw-generator-form"
+        );
+
+
+
+        if(form){
+
+            form.addEventListener(
+                "submit",
+                this.generate.bind(this)
+            );
+
+        }
+
+
+
+        const subscriptionButton =
+        document.getElementById(
+            "vw-subscription-btn"
+        );
+
+
+
+        if(subscriptionButton){
+
+            subscriptionButton.addEventListener(
+
+                "click",
+
+                this.subscribe.bind(this)
+
+            );
+
+        }
+
+
+
+        const apiButton =
+        document.getElementById(
+            "vw-api-link-btn"
+        );
+
+
+
+        if(apiButton){
+
+            apiButton.addEventListener(
+
+                "click",
+
+                ()=>{
+
+                    window.open(
+
+                        "https://console.groq.com/keys",
+
+                        "_blank"
+
+                    );
+
+                }
+
+            );
+
+        }
+
+
+
+        const saveApiButton =
+        document.getElementById(
+            "vw-save-api-btn"
+        );
+
+
+
+        if(saveApiButton){
+
+            saveApiButton.addEventListener(
+
+                "click",
+
+                ()=>{
+
+                    const input =
+                    document.getElementById(
+                        "vw-api-key"
+                    );
+
+
+                    Storage.saveApiKey(
+                        input.value.trim()
+                    );
+
+
+                    this.closeApiModal();
+
+
+                }
+
+            );
+
+        }
+
+
+
+    },
+
+
+
+
+
+    restoreApiKey(){
+
+
+        const key =
+        Storage.getApiKey();
+
+
+
+        const input =
+        document.getElementById(
+            "vw-api-key"
+        );
+
+
+
+        if(
+            input &&
+            key
+        ){
+
+            input.value = key;
+
+        }
+
+
+    },
+
+
+
+
+
+
+
+    async subscribe(){
+
+
+        try{
+
+
+            const result =
+            await PaymentManager.start();
+
+
+            Storage.saveSubscription(
+                result
+            );
+
+
+
+            alert(
+                "Subscription activated"
+            );
+
+
+        }
+        catch(error){
+
+
+            alert(
+                error.message
+            );
+
+
+        }
+
+
+    },
+
+
+
+
+
+
+
+
+    async generate(event){
+
+
+        event.preventDefault();
+
+
+
+        try{
+
+
+
+            const apiKey =
+            Storage.getApiKey();
+
+
+
+            if(!apiKey){
+
+
+                this.openApiModal();
+
+
+                return;
+
+
+            }
+
+
+
+
+
+
+            const subscription =
+
+            await SubscriptionManager.check();
+
+
+
+
+
+
+            if(!subscription.active){
+
+
+                document
+                .getElementById(
+                    "vw-payment-modal"
+                )
+                .hidden = false;
+
+
+                return;
+
+
+            }
+
+
+
+
+
+
+
+            const values =
+            getValues();
+
+
+
+
+
+            const prompt =
+            PromptBuilder.build(
+                values
+            );
+
+
+
+
+
+            const output =
+            await AIClient.generate(
+                prompt,
+                apiKey
+            );
+
+
+
+
+
+            const result =
+            document.getElementById(
+                "vw-output"
+            );
+
+
+            result.innerText =
+            output;
+
+
+
+        }
+        catch(error){
+
+
+            console.error(error);
+
+
+            alert(
+                error.message
+            );
+
+
+        }
+
+
+
+    },
+
+
+
+
+
+
+
+    openApiModal(){
+
+
+        const modal =
+        document.getElementById(
+            "vw-api-modal"
+        );
+
+
+        if(modal){
+
+            modal.hidden=false;
+
+        }
+
+
+    },
+
+
+
+
+
+    closeApiModal(){
+
+
+        const modal =
+        document.getElementById(
+            "vw-api-modal"
+        );
+
+
+        if(modal){
+
+            modal.hidden=true;
+
+        }
+
+
+    }
+
 
 };
 
@@ -41,191 +416,14 @@ const AI_CONFIG = {
 
 
 
-
-
-
-
-
-
-
-function restoreSelections() {
-
-    const values = load();
-
-    if (!values) return;
-
-    const map = {
-
-        purpose: UI.purpose,
-        category: UI.category,
-        topic: UI.topic,
-        goal: UI.goal,
-        contentStyle: UI.contentStyle,
-        audience: UI.audience,
-        length: UI.length,
-        platform: UI.platform,
-        language: UI.language,
-        creativity: UI.creativity,
-        emoji: UI.emoji,
-        cta: UI.cta
-
-    };
-
-    for (const [key, element] of Object.entries(map)) {
-
-        if (element && values[key] !== undefined) {
-
-            element.value = values[key];
-
-        }
-
-    }
-
-}
-
-
-
-async function onGenerate() {
-
-    const values = getValues();
-
-    const result = validate(values);
-
-    if (!result.valid) {
-        alert(result.message);
-        return;
-    }
-
-    save(values);
-
-    const context = buildContext(values);
-
-    const prompt = buildPrompt(context);
-
-    try {
-
-        if (!ensureApiKey()) {
-
-            return;
-
-        }
-
-
-        const uniqueId =
-            ensureUniqueId();
-
-
-        const subscription =
-            await checkSubscription(uniqueId);
-
-
-        if (!subscription.active) {
-
-            openPaymentModal();
-
-            return;
-
-        }
-
-
-        AI_CONFIG.apiKey =
-            localStorage.getItem(
-                window.VW_CONFIG.STORAGE_KEYS.API_KEY
-            );
-
-
-        const content =
-            await generateContent(
-                prompt,
-                AI_CONFIG
-            );
-
-        Output.render(content);
-
-    } catch (error) {
-
-        console.error(error);
-
-        Output.render("Unable to generate content.");
-
-    }
-
-}
-
-
-
-async function onCopy() {
-
-    await Output.copy();
-
-}
-
-function onClear() {
-
-    Output.clear();
-
-}
-
-async function onRegenerate() {
-
-    await onGenerate();
-
-}
-
-
 document.addEventListener(
 
-    "vw-subscription-activated",
+"DOMContentLoaded",
 
-    () => {
+()=>{
 
-        onGenerate();
+    App.init();
 
-    }
+}
 
 );
-
-
-document.addEventListener("DOMContentLoaded", () => {
-
-    initializeDropdowns();
-
-    restoreSelections();
-
-    initializeApiModal();
-
-    initializePaymentModal();
-
-    const button = document.getElementById("vw-generate-btn");
-    const copyButton = document.getElementById("vw-copy-btn");
-    const regenerateButton = document.getElementById("vw-regenerate-btn");
-    const clearButton = document.getElementById("vw-clear-btn");
-
-    if (button) {
-
-        button.addEventListener(
-            "click",
-            (event) => {
-
-                event.preventDefault();
-
-                onGenerate();
-
-            }
-        );
-
-    }
-
-    if (copyButton) {
-        copyButton.addEventListener("click", onCopy);
-    }
-
-    if (regenerateButton) {
-        regenerateButton.addEventListener("click", onRegenerate);
-    }
-
-    if (clearButton) {
-        clearButton.addEventListener("click", onClear);
-    }
-
-});

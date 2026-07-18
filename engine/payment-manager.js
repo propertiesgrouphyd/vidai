@@ -1,312 +1,368 @@
-import { getUniqueId } from "./identity-manager.js";
+"use strict";
 
-function openPaymentModal() {
+/* ==========================================================================
+   VIDHWAAN AI Writer
+   Payment Manager
 
-    const modal =
-        document.getElementById(
-            "vw-payment-modal"
-        );
+   Flow:
 
-    if (!modal) return;
+   Get Subscription Button
 
-    modal.hidden = false;
+        |
+        |
+   Worker /create-order
 
-    modal.setAttribute(
-        "aria-hidden",
-        "false"
-    );
+        |
+        |
+   Razorpay Checkout
 
-    document.body.style.overflow = "hidden";
+        |
+        |
+   Worker /verify-payment
 
-}
+        |
+        |
+   Receive uniqueId + expiry
 
-
-function closePaymentModal() {
-
-    const modal =
-        document.getElementById(
-            "vw-payment-modal"
-        );
-
-    if (!modal) return;
-
-    modal.hidden = true;
-
-    modal.setAttribute(
-        "aria-hidden",
-        "true"
-    );
-
-    document.body.style.overflow = "";
-
-}
+   ========================================================================== */
 
 
-function initializePaymentModal() {
+const PaymentManager = {
 
 
-    const closeButton =
-        document.getElementById(
-            "vw-payment-close-btn"
+
+    async start(){
+
+
+        const order =
+
+        await this.createOrder();
+
+
+
+        return await this.openRazorpay(
+            order
         );
 
 
-    if (closeButton) {
+    },
 
-        closeButton.addEventListener(
-            "click",
-            closePaymentModal
+
+
+
+
+    async createOrder(){
+
+
+
+        const response =
+
+        await fetch(
+
+            VW_CONFIG.PAYMENT.WORKER_URL +
+
+            VW_CONFIG.PAYMENT.CREATE_ORDER,
+
+
+            {
+
+                method:"POST",
+
+
+                headers:{
+
+                    "Content-Type":
+                    "application/json"
+
+                },
+
+
+                body:JSON.stringify({})
+
+            }
+
         );
 
-    }
 
-    const cancel =
-        document.getElementById(
-            "vw-payment-cancel-btn"
-        );
 
 
-    if (cancel) {
 
-        cancel.addEventListener(
-            "click",
-            closePaymentModal
-        );
+        const data =
 
-    }
+        await response.json();
 
 
-    const payment =
-        document.getElementById(
-            "vw-payment-btn"
-        );
 
 
-    if (payment) {
 
-        payment.addEventListener(
-            "click",
-            async () => {
+        if(!data.success){
 
-                try {
 
+            throw new Error(
 
-                    const uniqueId =
-                        getUniqueId();
+                data.error ||
 
+                "Order creation failed"
 
+            );
 
-                    const orderResponse =
-                        await fetch(
 
-                            window.VW_CONFIG.WORKER.BASE_URL +
-                            window.VW_CONFIG.WORKER.CREATE_ORDER,
+        }
 
-                            {
 
-                                method:"POST",
 
-                                headers:{
-                                    "Content-Type":
-                                    "application/json"
-                                },
 
-                                body:JSON.stringify({
 
-                                    uniqueId
+        return data;
 
-                                })
 
-                            }
+    },
 
-                        );
 
 
 
-                    const order =
-                        await orderResponse.json();
 
 
 
-                    if (!order.orderId) {
+    openRazorpay(order){
 
-                        throw new Error(
-                            "Unable to create payment order"
-                        );
 
-                    }
+        return new Promise(
 
+            (resolve,reject)=>{
 
 
-                    const options = {
+                const options = {
 
 
-                        key:
-                        order.key,
+                    key:
+                    order.key,
 
 
-                        amount:
-                        order.amount,
+                    amount:
+                    order.amount,
 
 
-                        currency:
-                        "INR",
+                    currency:
+                    "INR",
 
 
-                        name:
-                        "VIDHWAAN AI",
+                    name:
+                    "VIDHWAAN AI Writer",
 
 
-                        description:
-                        "30 Days Subscription",
+                    description:
+                    "Monthly Subscription ₹30",
 
 
-                        order_id:
-                        order.orderId,
+                    order_id:
+                    order.orderId,
 
 
 
-                        handler:
-                        async function(response){
 
 
+                    handler:
 
-                            const verifyResponse =
-                                await fetch(
+                    async(response)=>{
 
-                                    window.VW_CONFIG.WORKER.BASE_URL +
-                                    window.VW_CONFIG.WORKER.VERIFY_PAYMENT,
 
-                                    {
-
-                                        method:"POST",
-
-                                        headers:{
-                                            "Content-Type":
-                                            "application/json"
-                                        },
-
-                                        body:JSON.stringify({
-
-                                            paymentId:
-                                            response.razorpay_payment_id,
-
-
-                                            orderId:
-                                            response.razorpay_order_id,
-
-
-                                            signature:
-                                            response.razorpay_signature,
-
-
-                                            uniqueId
-
-                                        })
-
-                                    }
-
-                                );
-
+                        try{
 
 
                             const result =
-                                await verifyResponse.json();
+
+                            await this.verifyPayment(
+                                response
+                            );
 
 
+                            resolve(result);
 
-                            if(result.success){
 
-                                closePaymentModal();
+                        }
+                        catch(error){
 
-                                document.dispatchEvent(
 
-                                    new CustomEvent(
-
-                                        "vw-subscription-activated",
-
-                                        {
-
-                                            detail:result
-
-                                        }
-
-                                    )
-
-                                );
-
-                            }
+                            reject(error);
 
 
                         }
 
 
-
-                    };
-
-
-
-                    const razorpay =
-                        new Razorpay(options);
+                    },
 
 
 
-                    razorpay.open();
+
+
+                    modal:{
+
+
+                        ondismiss(){
+
+
+                            reject(
+
+                                new Error(
+                                    "Payment cancelled"
+                                )
+
+                            );
+
+
+                        }
+
+
+                    }
+
+
+                };
 
 
 
-                }
-                catch(error){
 
-                    console.error(
-                        "Payment failed:",
-                        error
-                    );
 
-                    alert(
-                        "Payment could not start."
-                    );
+                const razorpay =
 
-                }
+                new Razorpay(options);
+
+
+
+
+
+                razorpay.open();
+
 
 
             }
+
         );
+
+
+    },
+
+
+
+
+
+
+
+
+
+    async verifyPayment(response){
+
+
+
+        const result =
+
+        await fetch(
+
+            VW_CONFIG.PAYMENT.WORKER_URL +
+
+            VW_CONFIG.PAYMENT.VERIFY_PAYMENT,
+
+
+            {
+
+
+                method:"POST",
+
+
+                headers:{
+
+                    "Content-Type":
+                    "application/json"
+
+                },
+
+
+                body:JSON.stringify({
+
+
+                    paymentId:
+
+                    response.razorpay_payment_id,
+
+
+
+                    orderId:
+
+                    response.razorpay_order_id,
+
+
+
+                    signature:
+
+                    response.razorpay_signature
+
+
+                })
+
+            }
+
+        );
+
+
+
+
+
+
+
+        const data =
+
+        await result.json();
+
+
+
+
+
+
+
+        if(!data.success){
+
+
+            throw new Error(
+
+                data.error ||
+
+                "Payment verification failed"
+
+            );
+
+
+        }
+
+
+
+
+
+
+
+        return {
+
+
+            uniqueId:
+
+            data.uniqueId,
+
+
+            expires:
+
+            data.expires
+
+
+        };
 
 
     }
 
-    const modal =
-        document.getElementById(
-            "vw-payment-modal"
-        );
 
-    if (modal) {
-
-        modal.addEventListener(
-            "click",
-            e => {
-
-                if (
-                    e.target === modal
-                ) {
-
-                    closePaymentModal();
-
-                }
-
-            }
-        );
-
-    }
-
-}
-
-
-export {
-
-    openPaymentModal,
-    closePaymentModal,
-    initializePaymentModal
 
 };
+
+
+
+
+
+export default PaymentManager;

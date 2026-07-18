@@ -1,92 +1,196 @@
 "use strict";
 
+/* ==========================================================================
+   VIDHWAAN AI Writer
+   AI Client
 
-async function generateContent(prompt, config = {}) {
+   Handles only Groq API communication
 
-    if (!prompt) {
-
-        throw new Error("Prompt is required.");
-
-    }
-
-
-    if (!config.apiKey) {
-
-        throw new Error("API key not configured.");
-
-    }
+   ========================================================================== */
 
 
-    const response = await fetch(
+const AIClient = {
 
-        config.baseUrl,
 
-        {
 
-            method: "POST",
+    async generate(
 
-            headers: {
+        prompt,
 
-                "Content-Type": "application/json",
+        apiKey
 
-                "Authorization":
-                    `Bearer ${config.apiKey}`
+    ){
 
-            },
 
-            body: JSON.stringify({
 
-                model: config.model,
+        if(!prompt){
 
-                messages: [
-
-                    {
-
-                        role: "user",
-
-                        content: prompt
-
-                    }
-
-                ],
-
-                temperature:
-                    config.temperature ?? 0.7,
-
-                max_tokens:
-                    config.maxTokens ?? 4096
-
-            })
+            throw new Error(
+                "Prompt is required."
+            );
 
         }
 
-    );
 
 
-    if (!response.ok) {
+        if(!apiKey){
 
-        throw new Error(
-            "AI request failed."
+            throw new Error(
+                "API key not configured."
+            );
+
+        }
+
+
+
+
+
+
+        const response =
+
+        await fetch(
+
+            VW_CONFIG.API.BASE_URL +
+
+            VW_CONFIG.API.CHAT_ENDPOINT,
+
+
+            {
+
+
+                method:"POST",
+
+
+                headers:{
+
+
+                    "Content-Type":
+                    "application/json",
+
+
+
+                    "Authorization":
+                    `Bearer ${apiKey}`
+
+
+                },
+
+
+
+                body:JSON.stringify({
+
+
+                    model:
+
+                    VW_CONFIG.API.MODEL,
+
+
+
+                    messages:[
+
+
+                        {
+
+
+                            role:"user",
+
+
+                            content:prompt
+
+
+                        }
+
+
+                    ],
+
+
+
+
+                    temperature:0.7,
+
+
+
+                    max_tokens:4096
+
+
+                })
+
+
+            }
+
+
         );
+
+
+
+
+
+
+
+        if(!response.ok){
+
+
+            const error =
+            await response.text();
+
+
+            throw new Error(
+
+                "AI request failed: "
+
+                +
+
+                error
+
+            );
+
+
+        }
+
+
+
+
+
+
+
+
+        const data =
+
+        await response.json();
+
+
+
+
+
+
+
+        return (
+
+            data
+
+            ?.choices
+
+            ?. [0]
+
+            ?.message
+
+            ?.content
+
+            ||
+
+            ""
+
+        );
+
 
     }
 
 
-    const data = await response.json();
-
-
-    return (
-
-        data?.choices?.[0]?.message?.content
-        || ""
-
-    );
-
-}
-
-
-export {
-
-    generateContent
 
 };
+
+
+
+
+
+export default AIClient;
