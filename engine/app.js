@@ -179,6 +179,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
     restoreSelections();
 
+    initializeApiModal();
+
+    initializePaymentModal();
+
     const button = document.getElementById("vw-generate-btn");
     const copyButton = document.getElementById("vw-copy-btn");
     const regenerateButton = document.getElementById("vw-regenerate-btn");
