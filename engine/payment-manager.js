@@ -42,6 +42,22 @@ function closePaymentModal() {
 
 function initializePaymentModal() {
 
+
+    const closeButton =
+        document.getElementById(
+            "vw-payment-close-btn"
+        );
+
+
+    if (closeButton) {
+
+        closeButton.addEventListener(
+            "click",
+            closePaymentModal
+        );
+
+    }
+
     const cancel =
         document.getElementById(
             "vw-payment-cancel-btn"
