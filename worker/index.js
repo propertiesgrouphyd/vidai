@@ -1,150 +1,707 @@
-const CORS_HEADERS = {
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type"
-};
-
-const SUBSCRIPTION_PRICE = 3000; // ₹30 (paise)
 const SUBSCRIPTION_DAYS = 30;
+const AMOUNT = 100; // ₹1
 
-function json(data, status = 200) {
-    return new Response(
-        JSON.stringify(data),
-        {
-            status,
-            headers: {
-                "Content-Type": "application/json",
-                ...CORS_HEADERS
-            }
-        }
-    );
-}
-
-async function body(request) {
-    try {
-        return await request.json();
-    } catch {
-        return {};
-    }
-}
-
-function requireFields(data, fields) {
-    for (const field of fields) {
-        if (
-            data[field] === undefined ||
-            data[field] === null ||
-            data[field] === ""
-        ) {
-            throw new Error("Missing field: " + field);
-        }
-    }
-}
-
-function generateReceipt() {
-    return (
-        "VW-" +
-        Date.now().toString(36).toUpperCase() +
-        "-" +
-        crypto.randomUUID()
-            .replace(/-/g, "")
-            .substring(0, 8)
-            .toUpperCase()
-    );
-}
 
 export default {
 
-    async fetch(request, env) {
+async fetch(request, env) {
 
-        if (request.method === "OPTIONS") {
-            return new Response(null, {
-                headers: CORS_HEADERS
-            });
-        }
 
-        try {
+    if (request.method === "OPTIONS") {
+        return cors();
+    }
 
-            const url = new URL(request.url);
 
-            if (
-                request.method === "POST" &&
-                url.pathname === "/create-order"
-            ) {
+    const url = new URL(request.url);
 
-                const order =
-                    await createRazorpayOrder(env);
 
-                return json({
-                    success: true,
-                    order
-                });
+    try {
 
-            }
 
-            if (
-                request.method === "POST" &&
-                url.pathname === "/verify-payment"
-            ) {
+        if (
+            request.method === "POST" &&
+            url.pathname === "/create-order"
+        ) {
 
-                const data =
-                    await body(request);
-
-                requireFields(data, [
-                    "unique_id",
-                    "razorpay_order_id",
-                    "razorpay_payment_id",
-                    "razorpay_signature"
-                ]);
-
-                const valid =
-                    await verifySignature(
-                        env,
-                        data.razorpay_order_id,
-                        data.razorpay_payment_id,
-                        data.razorpay_signature
-                    );
-
-                if (!valid) {
-                    return json({
-                        success: false,
-                        message:
-                            "Invalid payment signature."
-                    }, 400);
-                }
-
-                const expires =
-                    await writeSubscription(
-                        env,
-                        data.unique_id
-                    );
-
-                await purgeSubscription(
-                    env,
-                    data.unique_id
-                );
-
-                return json({
-                    success: true,
-                    expires
-                });
-
-            }
-
-            return json({
-                success: false,
-                message: "Not Found"
-            }, 404);
-
-        } catch (error) {
-
-            return json({
-                success: false,
-                message: error.message
-            }, 500);
+            return await createOrder(
+                request,
+                env
+            );
 
         }
+
+
+
+        if (
+            request.method === "POST" &&
+            url.pathname === "/verify-payment"
+        ) {
+
+            return await verifyPayment(
+                request,
+                env
+            );
+
+        }
+
+
+
+        return json(
+            {
+                error:"Not Found"
+            },
+            404
+        );
+
+
+    } catch(error) {
+
+
+        return json(
+            {
+                error:error.message
+            },
+            500
+        );
+
 
     }
 
+
+}
+
 };
+
+
+
+
+
+function json(
+    data,
+    status = 200
+){
+
+return new Response(
+
+JSON.stringify(data),
+
+{
+
+status,
+
+headers:{
+
+"Content-Type":
+"application/json",
+
+"Access-Control-Allow-Origin":
+"*",
+
+"Access-Control-Allow-Methods":
+"POST, OPTIONS",
+
+"Access-Control-Allow-Headers":
+"Content-Type"
+
+}
+
+}
+
+);
+
+}
+
+
+
+
+
+
+function cors(){
+
+return new Response(
+null,
+{
+
+status:204,
+
+headers:{
+
+"Access-Control-Allow-Origin":"*",
+
+"Access-Control-Allow-Methods":
+"POST, OPTIONS",
+
+"Access-Control-Allow-Headers":
+"Content-Type"
+
+}
+
+}
+
+);
+
+}
+
+
+
+
+
+
+
+
+async function createOrder(
+request,
+env
+){
+
+
+const body =
+await request.json();
+
+
+
+const uniqueId =
+body.uniqueId;
+
+
+
+if(!uniqueId){
+
+return json(
+{
+error:"Unique ID required"
+},
+400
+);
+
+}
+
+
+
+
+const auth =
+btoa(
+`${env.RAZORPAY_KEY_ID}:${env.RAZORPAY_KEY_SECRET}`
+);
+
+
+
+
+const response =
+await fetch(
+
+"https://api.razorpay.com/v1/orders",
+
+{
+
+method:"POST",
+
+headers:{
+
+"Authorization":
+`Basic ${auth}`,
+
+"Content-Type":
+"application/json"
+
+},
+
+body:JSON.stringify({
+
+amount:AMOUNT,
+
+currency:"INR",
+
+receipt:
+`VIDHWAAN-${Date.now()}`
+
+})
+
+}
+
+);
+
+
+
+
+
+if(!response.ok){
+
+throw new Error(
+"Razorpay order creation failed"
+);
+
+}
+
+
+
+
+const order =
+await response.json();
+
+
+
+
+
+/*
+    Store temporary order mapping
+
+    Prevents:
+    User A payment
+    User B uniqueId activation
+
+*/
+
+
+await env.SUBSCRIPTIONS.put(
+
+`orders/${order.id}.json`,
+
+JSON.stringify({
+
+orderId:
+order.id,
+
+uniqueId,
+
+created:
+Date.now()
+
+}),
+
+{
+
+httpMetadata:{
+
+contentType:
+"application/json"
+
+}
+
+}
+
+);
+
+
+
+
+
+
+
+return json({
+
+success:true,
+
+key:
+env.RAZORPAY_KEY_ID,
+
+orderId:
+order.id,
+
+amount:
+AMOUNT
+
+});
+
+}
+
+async function verifyPayment(
+    request,
+    env
+){
+
+
+const body =
+await request.json();
+
+
+
+const {
+
+paymentId,
+
+orderId,
+
+signature,
+
+uniqueId
+
+
+} = body;
+
+
+
+
+if(
+!paymentId ||
+!orderId ||
+!signature ||
+!uniqueId
+){
+
+return json(
+{
+error:"Missing payment details"
+},
+400
+);
+
+}
+
+
+
+
+
+
+const valid =
+await verifySignature(
+
+orderId,
+
+paymentId,
+
+signature,
+
+env.RAZORPAY_KEY_SECRET
+
+);
+
+
+
+
+
+if(!valid){
+
+return json(
+{
+error:"Invalid payment signature"
+},
+403
+);
+
+}
+
+
+
+
+
+
+/*
+    Check order ownership
+
+    orderId
+        ↓
+    stored uniqueId
+*/
+
+
+const orderData =
+await env.SUBSCRIPTIONS.get(
+
+`orders/${orderId}.json`
+
+);
+
+
+
+
+if(!orderData){
+
+return json(
+{
+error:"Order not found"
+},
+404
+);
+
+}
+
+
+
+
+
+const order =
+await orderData.json();
+
+
+
+
+
+if(
+order.uniqueId !== uniqueId
+){
+
+return json(
+{
+error:"Unique ID mismatch"
+},
+403
+);
+
+}
+
+
+
+
+
+
+/*
+    Create subscription
+*/
+
+
+const expires =
+
+Date.now()
++
+(
+SUBSCRIPTION_DAYS *
+24 *
+60 *
+60 *
+1000
+);
+
+
+
+
+
+
+const subscription = {
+
+
+uniqueId,
+
+
+plan:
+"30-days",
+
+
+paymentId,
+
+
+orderId,
+
+
+created:
+Date.now(),
+
+
+expires
+
+
+};
+
+
+
+
+
+
+await env.SUBSCRIPTIONS.put(
+
+`${uniqueId}.json`,
+
+JSON.stringify(subscription),
+
+{
+
+httpMetadata:{
+
+contentType:
+"application/json"
+
+}
+
+}
+
+);
+
+try {
+    await purgeSubscription(env, uniqueId);
+} catch (err) {
+    console.error("Cache purge failed:", err);
+}
+
+
+
+
+
+/*
+    Remove temporary order
+*/
+
+
+await env.SUBSCRIPTIONS.delete(
+
+`orders/${orderId}.json`
+
+);
+
+
+
+
+
+
+return json({
+
+success:true,
+
+uniqueId,
+
+expires
+
+});
+
+
+}
+
+async function verifySignature(
+orderId,
+paymentId,
+signature,
+secret
+){
+
+
+const encoder =
+new TextEncoder();
+
+
+
+
+const key =
+await crypto.subtle.importKey(
+
+"raw",
+
+encoder.encode(secret),
+
+{
+
+name:"HMAC",
+
+hash:"SHA-256"
+
+},
+
+false,
+
+["sign"]
+
+);
+
+
+
+
+
+const signed =
+await crypto.subtle.sign(
+
+"HMAC",
+
+key,
+
+encoder.encode(
+
+`${orderId}|${paymentId}`
+
+)
+
+);
+
+
+
+
+
+const expected =
+
+[
+...new Uint8Array(signed)
+]
+
+.map(
+
+b =>
+b
+.toString(16)
+.padStart(2,"0")
+
+)
+
+.join("");
+
+
+
+
+
+return expected === signature;
+
+
+}
+async function purgeSubscription(
+    env,
+    uniqueId
+){
+
+const url =
+
+`https://api.cloudflare.com/client/v4/zones/${env.CF_ZONE_ID}/purge_cache`;
+
+
+
+const response =
+
+await fetch(
+
+url,
+
+{
+
+method:"POST",
+
+headers:{
+
+"Authorization":
+`Bearer ${env.CF_API_TOKEN}`,
+
+"Content-Type":
+"application/json"
+
+},
+
+body:JSON.stringify({
+
+files:[
+    `https://subscriptions.propertiesgrouphyd.online/subscriptions/${uniqueId}.json`
+]
+
+})
+
+}
+
+);
+
+
+
+
+
+if(!response.ok){
+
+const error =
+await response.text();
+
+
+throw new Error(
+"Cache purge failed: " + error
+);
+
+}
+
+
+
+
+return true;
+
+
+}
 
