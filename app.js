@@ -59,13 +59,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function restoreSettings() {
 
-        const apiKey = VWStorage.get(
+        const apiKey = VWStorage.getString(
             VW_CONFIG.STORAGE_KEYS.API_KEY,
             ""
         );
 
-        if (VWApp.DOM?.apiKey && apiKey) {
+        if (VWApp.DOM.apiKey && apiKey) {
+
             VWApp.DOM.apiKey.value = apiKey;
+
         }
 
     }
@@ -78,11 +80,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
             VWUI.showLoading();
 
-            if (VWApp.DOM.apiKey.value.trim()) {
+            const apiKey = VWApp.DOM.apiKey.value.trim();
 
-                VWStorage.set(
+            if (apiKey) {
+
+                VWStorage.setString(
                     VW_CONFIG.STORAGE_KEYS.API_KEY,
-                    VWApp.DOM.apiKey.value.trim()
+                    apiKey
                 );
 
             }
@@ -142,14 +146,6 @@ document.addEventListener("DOMContentLoaded", () => {
     document.addEventListener("DOMContentLoaded", () => {
 
         restoreSettings();
-
-        VWSubscription.refresh()
-            .then(() => {
-                VWUI.updateSubscription(
-                    VWSubscription.getStatus()
-                );
-            })
-            .catch(console.error);
 
         if (VWApp.DOM.form) {
 
