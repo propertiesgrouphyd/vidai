@@ -1,0 +1,63 @@
+name: Generate LinkedIn Topics
+
+on:
+  workflow_dispatch:
+
+  push:
+    paths:
+      - "purposes.js"
+      - "categories.js"
+      - "scripts/generate-topics.js"
+
+
+jobs:
+
+  generate-topics:
+
+    runs-on: ubuntu-latest
+
+
+    steps:
+
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+
+      - name: Install Dependencies
+        run: |
+          npm install
+
+
+      - name: Generate Topics Using Groq AI
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+        run: |
+          node scripts/generate-topics.js
+
+
+      - name: Validate Generated File
+        run: |
+          node scripts/generate-topics.js --validate
+
+
+      - name: Commit Generated Topics
+        run: |
+
+          git config user.name "github-actions"
+
+          git config user.email "actions@github.com"
+
+
+          git add generated/topics.js
+
+
+          git commit -m "Auto generate LinkedIn topics" || echo "No changes"
+
+
+          git push
