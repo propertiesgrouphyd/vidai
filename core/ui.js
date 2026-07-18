@@ -141,32 +141,7 @@ const VWUI = (() => {
     }
 
 
-    function updateSubscription(status = {}) {
 
-        const badge =
-            $("#vw-subscription-status");
-
-
-        if (!badge) return;
-
-
-        if (status.active) {
-
-            badge.textContent = "Active";
-
-            badge.dataset.state =
-                "active";
-
-        } else {
-
-            badge.textContent = "Inactive";
-
-            badge.dataset.state =
-                "inactive";
-
-        }
-
-    }
 
 
     function showModal(selector) {
@@ -183,33 +158,7 @@ const VWUI = (() => {
     }
 
 
-    return Object.freeze({
-
-        $,
-
-        $$,
-
-        showLoading,
-
-        hideLoading,
-
-        showToast,
-
-        setText,
-
-        setHTML,
-
-        show,
-
-        hide,
-
-        showModal,
-
-        hideModal,
-
-        updateSubscription
-
-    });
+ 
 
 
 })();
